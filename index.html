@@ -336,7 +336,8 @@ footer{padding:26px 0 30px;color:var(--muted);font-size:12px;letter-spacing:.2em
    YouTube ID = the part after "v=" or "youtu.be/" in the link.
    ============================================================ */
 const SITE = {
-  mainVideo: "hEKN7SSxuXk",           // e.g. "dQw4w9WgXcQ"
+  videoFile: "video.mp4",             // uploaded next to index.html; used first if it exists
+  mainVideo: "hEKN7SSxuXk",           // YouTube backup if video.mp4 is missing           // e.g. "dQw4w9WgXcQ"
   mainVideoVertical: true,            // true for a YouTube Short (9:16)
   mainVideoTitle: "Live mashup set",
   clips: [                            // up to 3 short clips; leave id "" to hide one
@@ -352,8 +353,20 @@ const SITE = {
 
 const yt = (id, title) => `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&playsinline=1" title="${title.replace(/"/g,'&quot;')}" loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
 const soon = t => `<div class="soon"><div class="play"></div><b>${t}</b><span>Video coming soon</span></div>`;
-if (SITE.mainVideo && SITE.mainVideoVertical) document.getElementById('mainVideo').classList.add('vert');
-document.getElementById('mainVideo').innerHTML = SITE.mainVideo ? yt(SITE.mainVideo, SITE.mainVideoTitle) : soon(SITE.mainVideoTitle);
+const mv = document.getElementById('mainVideo');
+const showYouTube = () => {
+  mv.classList.toggle('vert', !!(SITE.mainVideo && SITE.mainVideoVertical));
+  mv.innerHTML = SITE.mainVideo ? yt(SITE.mainVideo, SITE.mainVideoTitle) : soon(SITE.mainVideoTitle);
+};
+if (SITE.videoFile) {
+  const v = document.createElement('video');
+  v.src = SITE.videoFile; v.controls = true; v.playsInline = true; v.preload = 'metadata';
+  v.setAttribute('playsinline', ''); v.setAttribute('aria-label', SITE.mainVideoTitle);
+  v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#06030d';
+  v.addEventListener('loadedmetadata', () => { mv.classList.toggle('vert', v.videoHeight > v.videoWidth); }, {once: true});
+  v.addEventListener('error', showYouTube, {once: true});
+  mv.classList.add('vert'); mv.innerHTML = ''; mv.appendChild(v);
+} else showYouTube();
 document.getElementById('clips').innerHTML = SITE.clips.filter(c => c.id).map(c =>
   `<figure><div class="frame c video">${yt(c.id, c.title)}</div><figcaption>${c.title}</figcaption></figure>`).join('');
 
